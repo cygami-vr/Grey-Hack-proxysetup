@@ -1,0 +1,41 @@
+print("<color=#cccccc>Launched into proxy, connecting to router...")
+
+mx = include_lib("/lib/metaxploit.so")
+
+scan = function(lib)
+	print("<color=#cccccc>Scanning " + lib.lib_name + "...")
+	addresses = mx.scan(lib)
+	for addr in addresses
+		lines = mx.scan_address(lib, addr).split(char(10))[2:]
+		for line in lines
+			if line.indexOf("Unsafe check") == 0 then
+				vulnStart = line.indexOf("<b>") + 3
+				vulnEnd = line.indexOf("</b>", vulnStart)
+				vuln = line[vulnStart:vulnEnd]
+				
+				print("<color=#cccccc>Found " + addr + " " + vuln)
+				r = lib.overflow(addr, vuln)
+				if typeof(r) == "shell" then
+					print("<color=#cccccc>Got shell!")
+					return r
+				end if
+			end if
+		end for
+	end for
+	return null
+end function
+
+port0 = mx.net_use("192.168.0.1", 0)
+kernelRouter = port0.dump_lib
+routerShell = scan(kernelRouter)
+if not routerShell then
+	port8080 = mx.net_use("192.168.0.1", 8080)
+	http = port8080.dump_lib
+	routerShell = scan(http)
+end if
+
+if not routerShell then exit("<color=#cccccc>Could not get a shell! Automatic setup may not be possible on your router.")
+
+get_shell.scp("/etc/proxysetup/routersetuplocal", "/home/guest", routerShell)
+print("<color=#cccccc>Launching into router...")
+routerShell.launch("/home/guest/routersetuplocal", params[0] + " " + params[1])

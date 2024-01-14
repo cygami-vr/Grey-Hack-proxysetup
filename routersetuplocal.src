@@ -1,0 +1,86 @@
+print("<color=#cccccc>Launched into router, beginning configuration...")
+
+rootShell = null
+proxy = null
+
+updatePassword = function
+	password = ""
+	for i in range(7)
+		cat = floor(rnd * 3)
+		if cat == 0 then
+			c = "a".code + floor(rnd * ("z".code - "a".code))
+			password = password + char(c)
+		else if cat == 1 then
+			c = "A".code + floor(rnd * ("Z".code - "A".code))
+			password = password + char(c)
+		else if cat == 2 then
+			c = "0".code + floor(rnd * ("9".code - "0".code))
+			password = password + char(c)
+		end if
+	end for
+	print("<color=#cccccc>Changing root password to <color=#00ff00>" + password)
+	r = rootShell.host_computer.change_password("root", password)
+	if r != 1 then exit("<color=#ff0000>Error: " + r)
+end function
+
+installBinaries = function
+	for toInstall in routerInstall.indexes
+		print("<color=#cccccc>Installing " + toInstall + "...")
+		separator = toInstall.lastIndexOf("/")
+		fileName = toInstall[separator:]
+		r = proxy.scp("/router" + fileName, routerInstall[toInstall], rootShell)
+		if r != 1 then exit("<color=#ff0000>Error: " + r)
+	end for
+end function
+
+deletePasswdFile = function
+	passwdFile = rootShell.host_computer.File("/etc/passwd")
+	if passwdFile then
+		print("<color=#cccccc>Deleting /etc/passwd...")
+		passwdFile.delete
+	end if
+end function
+
+deleteGuest = function
+	guestDir = rootShell.host_computer.File("/home/guest")
+	if guestDir then
+		print("<color=#cccccc>Deleting /home/guest...")
+		rootShell.launch("/bin/rm", "-r /home/guest")
+	end if
+end function
+
+removePerms = function
+	print("<color=#cccccc>Removing non-root perms...")
+	rootShell.launch("/bin/chmod", "-R o-rwx /")
+	rootShell.launch("/bin/chmod", "-R g-rwx /")
+	rootShell.launch("/bin/chmod", "-R u-rwx /")
+	// Routers do not have chown binary. Consider uploading it?
+	// rootShell.launch("/bin/chown", "-R root /")
+end function
+
+get_shell.host_computer.touch("/home/guest", "temp")
+yield
+if get_shell.host_computer.File("/home/guest/temp").owner != "root" then
+	print("<color=#cccccc>Not root, escalating...")
+	rootShell = get_shell("root", params[1])
+else
+	rootShell = get_shell
+end if
+
+yield
+rootShell.host_computer.File("/home/guest/temp").delete
+
+proxy = rootShell.connect_service("192.168.0.2", 22, "root", params[0])
+
+if not rootShell.host_computer.File("/etc/proxysetup") then
+	rootShell.host_computer.create_folder("/etc", "proxysetup")
+end if
+
+proxy.scp("/etc/proxysetup/Config", "/etc/proxysetup", rootShell)
+import_code("/etc/proxysetup/Config")
+
+updatePassword
+installBinaries
+deletePasswdFile
+deleteGuest
+removePerms

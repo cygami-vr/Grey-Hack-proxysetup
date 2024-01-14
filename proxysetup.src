@@ -1,0 +1,101 @@
+if params.len < 2 then exit("Usage: <color=#cccccc>proxysetup [ip] [root pw] <color=#00ff00>or<color=#cccccc> proxysetup router [connecton file name] [router root pw]")
+
+if params[0] == "router" then
+	proxyArr = get_shell.host_computer.File("/etc/proxy/" + params[1] + ".txt").get_content.split(" ")
+	proxyArr = [proxyArr[0], proxyArr[2]]
+else
+	proxyArr = params
+end if
+proxy = get_shell.connect_service(proxyArr[0], 22, "root", proxyArr[1])
+if not proxy then exit("<color=#ff0000>Could not reach proxy")
+
+import_code("/etc/proxysetup/Config")
+
+updatePassword = function
+	password = ""
+	for i in range(7)
+		cat = floor(rnd * 3)
+		if cat == 0 then
+			c = "a".code + floor(rnd * ("z".code - "a".code))
+			password = password + char(c)
+		else if cat == 1 then
+			c = "A".code + floor(rnd * ("Z".code - "A".code))
+			password = password + char(c)
+		else if cat == 2 then
+			c = "0".code + floor(rnd * ("9".code - "0".code))
+			password = password + char(c)
+		end if
+	end for
+	print("<color=#cccccc>Changing root password to <color=#00ff00>" + password)
+	get_shell.host_computer.create_folder("/etc", "proxy")
+	yield
+	get_shell.host_computer.touch("/etc/proxy/", params[0] + ".txt")
+	yield
+	get_shell.host_computer.File("/etc/proxy/" + params[0] + ".txt").set_content(params[0] + " root " + password)
+	r = proxy.host_computer.change_password("root", password)
+	if r != 1 then exit("<color=#ff0000>Error: " + r)
+end function
+
+removePerms = function
+	print("<color=#cccccc>Removing non-root perms...")
+	proxy.launch("/bin/chmod", "-R o-rwx /")
+	proxy.launch("/bin/chmod", "-R g-rwx /")
+	proxy.launch("/bin/chmod", "-R u-rwx /")
+	proxy.launch("/bin/chown", "-R root /")
+end function
+
+installBinaries = function
+	for toInstall in proxyInstall.indexes
+		print("<color=#cccccc>Installing " + toInstall + "...")
+		r = get_shell.scp(toInstall, proxyInstall[toInstall], proxy)
+		if r != 1 then exit("<color=#ff0000>Error: " + r)
+	end for
+end function
+
+uploadRouterBinaries = function
+	if not proxy.host_computer.File("/router") then
+		proxy.host_computer.create_folder("/", "router")
+	end if
+	for toInstall in routerInstall.indexes
+		print("<color=#cccccc>Uploading " + toInstall + "...")
+		r = get_shell.scp(toInstall, "/router", proxy)
+		if r != 1 then exit("<color=#ff0000>Error: " + r)
+	end for
+end function
+
+deletePasswdFile = function
+	passwdFile = proxy.host_computer.File("/etc/passwd")
+	if passwdFile then
+		print("<color=#cccccc>Deleting /etc/passwd...")
+		passwdFile.delete
+	end if
+end function
+
+deleteGuest = function
+	guestDir = proxy.host_computer.File("/home/guest")
+	if guestDir then
+		print("<color=#cccccc>Deleting /home/guest...")
+		proxy.launch("/bin/rm", "-r /home/guest")
+	end if
+end function
+
+if params[0] == "router" then
+	print("<color=#cccccc>Uploading proxy scripts...")
+	if not proxy.host_computer.File("/etc/proxysetup") then
+		proxy.host_computer.create_folder("/etc", "proxysetup")
+	end if
+	get_shell.scp("/etc/proxysetup/routersetuplocal", "/etc/proxysetup", proxy)
+	get_shell.scp("/etc/proxysetup/routersetupremote", "/etc/proxysetup", proxy)
+	get_shell.scp("/etc/proxysetup/Config", "/etc/proxysetup", proxy)
+	uploadRouterBinaries
+	print("<color=#cccccc>Launching into proxy...")
+	proxy.launch("/etc/proxysetup/routersetupremote", proxyArr[1] + " " + params[2])
+else
+	updatePassword
+	installBinaries
+	deletePasswdFile
+	deleteGuest
+	removePerms
+end if
+
+print("<color=#cccccc>Done! Your proxy is ready for use.")
