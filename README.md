@@ -12,6 +12,7 @@ This is a series of scripts intended for use in the video game Grey Hack which e
 ## Configuration
 1. Your configuration file will actually be a compiled program that should be saved as `/etc/proxysetup/Config` (no extension).
 2. Here is an example source code snippet that could be compiled into the configuration file:
+
   routerInstall = {
   	"/lib/init.so": "/lib",
   	"/lib/net.so": "/lib",
