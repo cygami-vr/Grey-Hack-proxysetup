@@ -13,19 +13,19 @@ This is a series of scripts intended for use in the video game Grey Hack which e
 1. Your configuration file will actually be a compiled program that should be saved as `/etc/proxysetup/Config` (no extension).
 2. Here is an example source code snippet that could be compiled into the configuration file:
 
-  routerInstall = {
-  	"/lib/init.so": "/lib",
-  	"/lib/net.so": "/lib",
-  	"/path/to/kernel_router.so": "/lib",
-  	"/path/to/libhttp.so": "/lib" }
-  
-  proxyInstall = {
-  	"/lib/init.so": "/lib",
-  	"/lib/net.so": "/lib",
-  	"/lib/metaxploit.so": "/lib",
-  	"/lib/crypto.so": "/lib",
-  	"/usr/bin/ScanLan.exe": "/usr/bin",
-  	"/path/to/libssh.so": "/lib" }
+    routerInstall = {
+    	"/lib/init.so": "/lib",
+    	"/lib/net.so": "/lib",
+    	"/path/to/kernel_router.so": "/lib",
+    	"/path/to/libhttp.so": "/lib" }
+    
+    proxyInstall = {
+    	"/lib/init.so": "/lib",
+    	"/lib/net.so": "/lib",
+    	"/lib/metaxploit.so": "/lib",
+    	"/lib/crypto.so": "/lib",
+    	"/usr/bin/ScanLan.exe": "/usr/bin",
+    	"/path/to/libssh.so": "/lib" }
 
 ## Command syntax
 proxysetup can be run in two ways:
