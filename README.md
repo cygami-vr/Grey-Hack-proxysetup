@@ -45,3 +45,5 @@ This performs the following tasks on the proxy or router in question:
 ## Roadmap
 I'd like to make the following enhancements to the scripts:
 1. Add an "update only" mode for updating libs but skip other tasks.
+2. Add a third sub-command for installing an rshell-server.
+3. Have the main script automatically compile the remote and local subscripts to simplify the install.
