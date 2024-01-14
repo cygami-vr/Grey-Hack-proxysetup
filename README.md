@@ -4,8 +4,8 @@
 This is a series of scripts intended for use in the video game Grey Hack which expedites the setup of in-game proxy computers.
 
 ## Installation
-1. Install proxysetup to /bin
-2. Install proxysetupremote and proxysetuplocal to /etc/proxysetup/
+1. Install `proxysetup` to `/bin`
+2. Install `proxysetupremote` and `proxysetuplocal` to `/etc/proxysetup/`
 3. Create your proxysetup configuration. Refer to the next section for detils.
 4. Done! You are ready to run `proxysetup` from the command line.
 
